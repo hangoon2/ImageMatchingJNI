@@ -1,0 +1,1 @@
+double match_image(const char *ref_image_file_name, cv::Rect templ_rect, const char *target_image_file_name, cv::Rect &match_rect, bool show_image);

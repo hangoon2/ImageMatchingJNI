@@ -1,0 +1,196 @@
+////////////////////////////////////////////////////////////////////////////////////////
+//////////////////               open cv 설정과 컴파일 및 설치         //////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+
+1. 컴파일 전 필요한 패키지 설치
+
+- openjdk 7 설치
+$ sudo add-apt-repository ppa:openjdk-r/ppa
+$ sudo apt-get update
+$ sudo apt-get install openjdk-7-jdk
+
+- build-essential 패키지에는 C/C++ 컴파일러와 관련 라이브러리, make 같은 도구들이 포함
+- cmake는 컴파일 옵션이나 빌드된 라이브러리에 포함시킬 opencv 모듈 설정등을 위해 필요
+$ sudo apt-get install build-essential cmake
+
+- pkg-config는 프로그램 컴파일 및 링크시 필요한 라이브러리에 대한 정보를 메타파일로부터 가져오는데 사용
+$ sudo apt-get install png-config
+
+- 특정 코덱의 이미지 파일을 불러오거나 기록하기 위해 필요한 패키지
+$ sudo apt-get install libjpeg-dev libtiff5-dev libjasper-dev libpng12-dev
+
+- 특정 코덱의 비디오 파일을 읽어오거나 기록하기 위해 필요한 패키지
+$ sudo apt-get install libavcodec-dev libavformat-dev libswscale-dev libxvidcore-dev libx264-dev libxine2-dev
+
+- Video4Linux 패키지는 리눅스에서 실시간 비디오 캡쳐를 지원하기 위한 디바이스 드라이버와 API를 포함
+$ sudo apt-get install libv4l-dev v4l-utils
+
+- GStreamer는 비디오 스트리밍을 위한 라이브러리
+$ sudo apt-get install libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
+
+- 윈도우 생성등의 GUI를 위해 gtk 또는 qt를 선택해서 사용
+$ sudo apt-get install libqt4-dev
+
+- openGL 지원하기 위해 필요한 라이브러리
+$ sudo apt-get install mesa-utils libgl1-mesa-dri libqt4-opengl-dev
+
+- opencv 최적화를 위해 사용되는 라이브러리
+$ sudo apt-get install lib atlas-base-dev gfortran libeigen3-dev
+
+- python2.7-dev와 python3-dev패키지는 opencv-python 바인딩을 위해 필요한 패키지
+- numpy는 매트릭스 연산등을 빠르게 처리하기 위해 사용
+$ sudo apt-get install python2.7-dev python3-dev python-lumpy python3-numpy
+
+2. 소스코드를 저장할 임시 디렉토리를 생성하여 이동 후 진행
+$ mkdir opencv
+$ cd opencv
+
+3. OpenCV 4.0.1 소스코드를 다운로드 받아 압축을 풀어줌
+$ wget -O opencv.zip https://github.com/opencv/opencv/archive/4.0.1.zip
+$ unzip opencv.zip
+
+4. opencv_contrib(extra modules) 소스코드를 다운로드 받아 압축을 풀어줌
+SIFT, SURF 등을 사용하기 위해 필요함
+$ wget -O opencv_contrib.zip https://github.com/opencv/opencv_contrib/archive/4.0.1.zip
+$ unzip opencv_contrib.zip
+
+5. Opencv-4.0.1 디렉토리로 이동하여 build 디렉토리를 생성하고 build 디렉토리로 이동함
+$ cd opencv-4.0.1
+$ mkdir build
+$ cd build
+
+6. cmake를 사용하여 opencv 컴파일 설정을 해줌
+cmake -D CMAKE_BUILD_TYPE=RELEASE \
+-D CMAKE_INSTALL_PREFIX=/usr/local \
+-D WITH_TBB=OFF \
+-D WITH_IPP=OFF \
+-D WITH_1394=OFF \
+-D BUILD_WITH_DEBUG_INFO=OFF \
+-D BUILD_DOCS=OFF \
+-D INSTALL_C_EXAMPLES=ON \
+-D INSTALL_PYTHON_EXAMPLES=ON \
+-D BUILD_EXAMPLES=OFF \
+-D BUILD_TESTS=OFF \
+-D BUILD_PERF_TESTS=OFF \
+-D WITH_QT=ON \
+-D WITH_GTK=OFF \
+-D WITH_OPENGL=ON \
+-D OPENCV_EXTRA_MODULES_PATH=../../opencv_contrib-4.0.1/modules \
+-D WITH_V4L=ON  \
+-D WITH_FFMPEG=ON \
+-D WITH_XINE=ON \
+-D BUILD_NEW_PYTHON_SUPPORT=ON \
+-D OPENCV_GENERATE_PKGCONFIG=ON \
+-D PYTHON2_INCLUDE_DIR=/usr/include/python2.7 \
+-D PYTHON2_NUMPY_INCLUDE_DIRS=/usr/lib/python2.7/dist-packages/numpy/core/include/ \
+-D PYTHON2_PACKAGES_PATH=/usr/lib/python2.7/dist-packages \
+-D PYTHON2_LIBRARY=/usr/lib/x86_64-linux-gnu/libpython2.7.so \
+-D PYTHON3_INCLUDE_DIR=/usr/include/python3.5m \
+-D PYTHON3_NUMPY_INCLUDE_DIRS=/usr/lib/python3/dist-packages/numpy/core/include/  \
+-D PYTHON3_PACKAGES_PATH=/usr/lib/python3/dist-packages \
+-D PYTHON3_LIBRARY=/usr/lib/x86_64-linux-gnu/libpython3.5m.so \
+../
+
+아래와 같은 메시지가 보이면 정상 빌드
+ -- Configuring done
+ -- Generating done
+ -- Build files have been written to: (build폴더의 path)
+
+7. 빌드(time 명령은 빌드 시간 표시, 숫자 4는 코어수)
+$ time make -j4 
+
+8. 설치
+$ sudo make install
+
+9. /etc/ld.so.conf.d/ 디렉토리에 /usr/local/lib를 포함하는 설정파일이 있는지 확인
+$ cat /etc/ld.so.conf.d/*
+
+10. /usr/local/lib이 출력되지 않았다면 다음 명령을 추가로 실행
+$ sudo sh -c 'echo '/usr/local/lib' > /etc/ld.so.conf.d/opencv.conf'
+$ sudo ldconfig
+
+
+////////////////////////////////////////////////////////////////////////////////////////
+//////////////////               ImageMatchingJNI 빌드             //////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+
+1. ImageMatchingJNI.java 만들기
+예시)
+package com.onycom;
+
+import java.awt.Rectangle;
+
+public class ImageMatchingJNI {
+	
+	native double matchImage(String templateImageFileName, Rectangle templateRect,
+			String targetImageFileName, Rectangle matchRect, boolean showImage);
+	
+	static {
+		System.loadLibrary("ImageMatchingJNI");
+	}
+
+	public static class Main {
+
+		public static double matchImage(String templateImageFileName, Rectangle templateRect,
+										String targetImageFileName, Rectangle matchRect, boolean showImage) {
+			return new ImageMatchingJNI().matchImage(templateImageFileName, templateRect, targetImageFileName, matchRect, showImage);
+		}
+
+	}
+	
+}
+
+2. ImageMatchingJNI.java 파일 빌드하기
+$ javac -d . ImageMatchingJNI.java
+==> com/onycom/ 폴더안에 ImageMatchingJNI.class, ImageMatchingJNI$Main.class 생성됨
+
+3. javah로 헤더를 만듬
+$ javah ImageMatchingJNI ==> ImageMatchingJNI.h 생성됨(match_image_jni.h 로 변경하여 사용)
+==> 두번째 파라미터 jobject를 jclass로 변경하여 사용
+
+4. match_image_jni.cpp 작성
+
+5. match_image.cpp 작성
+
+6. match_image.o 파일 만들기
+$ g++ -fPIC -c match_image.cpp -I /usr/local/include/opencv4 --std=c++11 -lpthread `pkg-config opencv4 --cflags --libs`
+
+7. match_image_jni.o 파일 만들기
+$ g++ -fPIC -c match_image_jni.cpp -I /usr/local/include/opencv4 -I /usr/lib/jvm/java-7-openjdk-amd64/include --std=c++11 `pkg-config opencv4 --cflags --libs`
+
+8. ImageMatchingJNI.so 파일 만들기
+$ g++ -shared -o libImageMatchingJNI.so match_image.o match_image_jni.o --std=c++11 `pkg-config opencv4 --cflags --libs`
+
+9. manifest.txt 파일 작성
+Main-class:
+
+10. ImageMatchingJNI.jar 만들기
+$ jar -cvmf manifest.txt ImageMatchingJNI.jar com/onycom/ImageMatchingJNI\$Main.class 
+
+11. 동작확인을 위한 ImageMatchTest.java 작성
+예시)
+package com.onycom.test;
+
+import java.awt.Rectangle;
+
+import com.onycom.ImageMatchingJNI.Main;
+
+public class ImageMatchTest {
+
+	public static void main(String[] args) {
+		// TODO Auto-generated method stub
+		Rectangle templRect = new Rectangle(60, 558, 45, 25);
+		Rectangle rect = new Rectangle();
+		double ret = Main.matchImage("ref_image.png", templRect, "sample.png", rect, false);
+		
+		System.out.println("Result: " + ret + ", RECT(" + rect.x + ", " + rect.y +
+				", " + rect.width + ", " + rect.height + ")");
+	}
+
+}
+
+12. 동작확인을 위한 ImageMatchTest.java 빌드하기(path는 상황에 맞게 수정)
+$ javac -d . -cp "./ImageMatchingJNI.jar" ImageMatchTest.java
+
+14. ImageMatchTest 동작테스트
+$ java -cp ImageMatchingJNI.jar:. com.onycom.test.ImageMatchTest
